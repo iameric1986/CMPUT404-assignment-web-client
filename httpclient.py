@@ -108,21 +108,17 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):
+        self.get_host_port(url)
+        self.requestType = "GET %s HTTP/1.1\r\n" %(self.path)        
+        httpRequest = self.requestType + "Host: " + self.host + "\r\n" + "Connection: close\r\n\r\n"
         # Convert the mapping into urllib usable string
         # Ref: Python urllib docs
         # URL: https://docs.python.org/2/library/urllib.html
         # Retrieved: Feb 2, 2017
         if(args != None):
             args = urllib.urlencode(args)
-        
-        self.get_host_port(url)
-        self.requestType = "GET %s HTTP/1.1\r\n" %(self.path)
-        
-        try:
-            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + "Connection: close\r\n\r\n" + args + "\r\n\r\n"
-        except:
-            httpRequest = self.requestType + "Host: " + self.host + "\r\n" +  "Connection: close\r\n\r\n\r\n\r\n"
-        
+            httpRequest += args + "\r\n\r\n"
+            
         try:
             self.connect(self.host, self.port)
         except:
@@ -137,18 +133,16 @@ class HTTPClient(object):
         return HTTPResponse(code, body)
 
     # Same logic as GET but changed the request to POST and added the content-type
-    def POST(self, url, args=None):
+    def POST(self, url, args=None):        
+        self.get_host_port(url)
+        self.requestType = "POST %s HTTP/1.1\r\n" %(self.path)        
+        httpRequest = self.requestType + "Host: " + self.host + "\r\n" + self.contentType + "Connection: close\r\n"
         
         if(args != None):
             args = urllib.urlencode(args)
-        
-        self.get_host_port(url)
-        self.requestType = "POST %s HTTP/1.1\r\n" %(self.path)
-        
-        try:
-            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + self.contentType + "Content-Length: %d" %(len(args))+ "\r\nConnection: close\r\n\r\n" + args + "\r\n\r\n" 
-        except:
-            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + self.contentType + "Content-Length: 0" + "\r\nConnection: close\r\n\r\n\r\n\r\n"
+            httpRequest += "Content-Length: %d\r\n\r\n" %(len(args)) + args + "\r\n\r\n" 
+        else:
+            httpRequest += "Content-Length: 0\r\n\r\n\r\n\r\n"
         
         try:
             self.connect(self.host, self.port)
