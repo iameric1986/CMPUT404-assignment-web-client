@@ -108,9 +108,6 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):
-        #code = 500
-        #body = ""
-        
         # Convert the mapping into urllib usable string
         # Ref: Python urllib docs
         # URL: https://docs.python.org/2/library/urllib.html
@@ -122,9 +119,9 @@ class HTTPClient(object):
         self.requestType = "GET %s HTTP/1.1\r\n" %(self.path)
         
         try:
-            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + self.contentType + "Connection: close\r\n\r\n" + args + "\r\n\r\n"
+            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + "Connection: close\r\n\r\n" + args + "\r\n\r\n"
         except:
-            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + self.contentType + "Connection: close\r\n\r\n\r\n\r\n"
+            httpRequest = self.requestType + "Host: " + self.host + "\r\n" +  "Connection: close\r\n\r\n\r\n\r\n"
         
         try:
             self.connect(self.host, self.port)
@@ -143,25 +140,21 @@ class HTTPClient(object):
     def POST(self, url, args=None):
         
         if(args != None):
-            print("Args is " + args)
             args = urllib.urlencode(args)
         
         self.get_host_port(url)
         self.requestType = "POST %s HTTP/1.1\r\n" %(self.path)
         
         try:
-            httpRequest = self.requestType + "Host: " + self.host + "\r\nContent-Length: %s" + "\r\nConnection: close\r\n\r\n" + args + "\r\n\r\n" %len(args)
+            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + self.contentType + "Content-Length: %d" %(len(args))+ "\r\nConnection: close\r\n\r\n" + args + "\r\n\r\n" 
         except:
-            httpRequest = self.requestType + "Host: " + self.host + "\r\nContent-Length: 0" + "\r\nConnection: close\r\n\r\n\r\n\r\n"
-        
-        print(httpRequest)
+            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + self.contentType + "Content-Length: 0" + "\r\nConnection: close\r\n\r\n\r\n\r\n"
         
         try:
             self.connect(self.host, self.port)
         except:
             print("Error occurred while trying to connect")
         
-        print(httpRequest)
         self.connection.sendall(httpRequest)
         self.httpResponse = self.recvall(self.connection) # Split the response into a header and body
         print(self.httpResponse)
