@@ -25,28 +25,75 @@ import re
 import urllib
 
 def help():
-    print "httpclient.py [GET/POST] [URL]\n"
+    print("httpclient.py [GET/POST] [URL]\n")
 
-class HTTPResponse(object):
+class HTTPResponse(object):    
     def __init__(self, code=200, body=""):
         self.code = code
         self.body = body
 
 class HTTPClient(object):
-    #def get_host_port(self,url):
+    def __init__(self):
+        self.host = ""
+        self.port = 80
+        self.path = ""
+        self.requestType = ""
+        self.connection = None
+        self.httpResponse = ""
+        self.contentType = "Content-Type: application/x-www-form-urlencoded\r\n"
 
+    def get_host_port(self, url):
+        # URL will look like this: http://BASEHOST:BASEPORT/path OR http://BASEHOST OR http://BASEHOST/path
+        # Will need to parse and separate the components of the string.
+        
+        url = url.strip('http:').strip('/') # Remove http:// and terminating '/'
+
+        # Case for BASEHOST only
+        if('/' not in url and ':' not in url):
+            self.host = url
+            self.path = "/"
+            return None
+        
+        # In the case of BASEHOST:BASEPORT/path AND BASEHOST/path there is always a '/' char
+        baseURLinfo = url.split('/') # If there is a path then they will be stored in [1:n]
+                
+        for i in range(1, len(baseURLinfo)):
+            self.path += "/" + baseURLinfo[i]
+        
+        if(self.path == ""): #Set default path for HTTP requests
+            self.path = "/"
+            
+        # Split on the ':' to get the port information
+        if(':' in url):
+            hostPortInfo = baseURLinfo[0].split(':')
+            self.host = hostPortInfo[0]
+            self.port = int(hostPortInfo[1]) # Need to cast str back to an int
+            return None
+
+        self.host = baseURLinfo[0]
+        return None
+
+    # Ref: Python socket library document
+    # URL: https://docs.python.org/2/howto/sockets.html
+    # Retrieved: Feb 2, 2017
     def connect(self, host, port):
         # use sockets!
+        self.connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connection.connect((host, port))
         return None
 
+    # The code is contained within the header.
     def get_code(self, data):
-        return None
+        header = self.get_headers(data).split("\r\n") # Get and split the header data
+        return header[0].split()[1]
 
+    # Get the headers only
     def get_headers(self,data):
-        return None
+        return data.split("\r\n\r\n")[0]
 
+    # Get the body only
     def get_body(self, data):
-        return None
+        return data.split("\r\n\r\n")[1]
 
     # read everything from the socket
     def recvall(self, sock):
@@ -61,13 +108,66 @@ class HTTPClient(object):
         return str(buffer)
 
     def GET(self, url, args=None):
-        code = 500
-        body = ""
+        #code = 500
+        #body = ""
+        
+        # Convert the mapping into urllib usable string
+        # Ref: Python urllib docs
+        # URL: https://docs.python.org/2/library/urllib.html
+        # Retrieved: Feb 2, 2017
+        if(args != None):
+            args = urllib.urlencode(args)
+        
+        self.get_host_port(url)
+        self.requestType = "GET %s HTTP/1.1\r\n" %(self.path)
+        
+        try:
+            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + self.contentType + "Connection: close\r\n\r\n" + args + "\r\n\r\n"
+        except:
+            httpRequest = self.requestType + "Host: " + self.host + "\r\n" + self.contentType + "Connection: close\r\n\r\n\r\n\r\n"
+        
+        try:
+            self.connect(self.host, self.port)
+        except:
+            print("Error occurred while trying to connect")
+        
+        self.connection.sendall(httpRequest)
+        self.httpResponse = self.recvall(self.connection) # Split the response into a header and body
+        print(self.httpResponse)
+        code = int(self.get_code(self.httpResponse)) # Need to cast the code from str back to int
+        body = self.get_body(self.httpResponse)
+        self.clearMem() # Need to clean up the object's attributes
         return HTTPResponse(code, body)
 
+    # Same logic as GET but changed the request to POST and added the content-type
     def POST(self, url, args=None):
-        code = 500
-        body = ""
+        
+        if(args != None):
+            print("Args is " + args)
+            args = urllib.urlencode(args)
+        
+        self.get_host_port(url)
+        self.requestType = "POST %s HTTP/1.1\r\n" %(self.path)
+        
+        try:
+            httpRequest = self.requestType + "Host: " + self.host + "\r\nContent-Length: %s" + "\r\nConnection: close\r\n\r\n" + args + "\r\n\r\n" %len(args)
+        except:
+            httpRequest = self.requestType + "Host: " + self.host + "\r\nContent-Length: 0" + "\r\nConnection: close\r\n\r\n\r\n\r\n"
+        
+        print(httpRequest)
+        
+        try:
+            self.connect(self.host, self.port)
+        except:
+            print("Error occurred while trying to connect")
+        
+        print(httpRequest)
+        self.connection.sendall(httpRequest)
+        self.httpResponse = self.recvall(self.connection) # Split the response into a header and body
+        print(self.httpResponse)
+        code = int(self.get_code(self.httpResponse)) # Need to cast the code from str back to int
+        body = self.get_body(self.httpResponse)
+        self.clearMem() # Need to clean up the object's attributes
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
@@ -75,6 +175,14 @@ class HTTPClient(object):
             return self.POST( url, args )
         else:
             return self.GET( url, args )
+        
+    def clearMem(self):
+        self.host = ""
+        self.port = 80
+        self.path = ""
+        self.requestType = ""
+        self.connection = None
+        self.httpResponse = ""        
     
 if __name__ == "__main__":
     client = HTTPClient()
@@ -83,6 +191,6 @@ if __name__ == "__main__":
         help()
         sys.exit(1)
     elif (len(sys.argv) == 3):
-        print client.command( sys.argv[2], sys.argv[1] )
+        print(client.command( sys.argv[2], sys.argv[1] ))
     else:
-        print client.command( sys.argv[1] )   
+        print(client.command( sys.argv[1] ))
