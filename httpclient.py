@@ -35,12 +35,12 @@ class HTTPResponse(object):
 class HTTPClient(object):
     def __init__(self):
         self.host = ""
-        self.port = 80
+        self.port = 80 # Default port as given by the socket library example https://docs.python.org/2/howto/sockets.html
         self.path = ""
         self.requestType = ""
         self.connection = None
         self.httpResponse = ""
-        self.contentType = "Content-Type: application/x-www-form-urlencoded\r\n"
+        self.contentType = "Content-Type: application/x-www-form-urlencoded\r\n" # Per requirements
 
     def get_host_port(self, url):
         # URL will look like this: http://BASEHOST:BASEPORT/path OR http://BASEHOST OR http://BASEHOST/path
@@ -60,17 +60,17 @@ class HTTPClient(object):
         for i in range(1, len(baseURLinfo)):
             self.path += "/" + baseURLinfo[i]
         
-        if(self.path == ""): #Set default path for HTTP requests
+        if(self.path == ""): #Set default path for HTTP requests if no path is given in the URL
             self.path = "/"
             
-        # Split on the ':' to get the port information
-        if(':' in url):
-            hostPortInfo = baseURLinfo[0].split(':')
-            self.host = hostPortInfo[0]
-            self.port = int(hostPortInfo[1]) # Need to cast str back to an int
+        if (':' not in url): # No port given, use the default port for the socket library (port 80)
+            self.host = baseURLinfo[0]
             return None
-
-        self.host = baseURLinfo[0]
+            
+        # Split on the ':' to get the port information
+        hostPortInfo = baseURLinfo[0].split(':')
+        self.host = hostPortInfo[0]
+        self.port = int(hostPortInfo[1]) # Need to cast str back to an int
         return None
 
     # Ref: Python socket library document
@@ -107,6 +107,7 @@ class HTTPClient(object):
                 done = not part
         return str(buffer)
 
+    # I assume that the URL passed in is valid and matches the those in the freetest.py unit tests
     def GET(self, url, args=None):
         self.get_host_port(url)
         self.requestType = "GET %s HTTP/1.1\r\n" %(self.path)        
