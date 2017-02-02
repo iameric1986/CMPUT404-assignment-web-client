@@ -129,10 +129,10 @@ class HTTPClient(object):
             print("Error occurred while trying to connect")
         
         self.connection.sendall(httpRequest)
-        self.httpResponse = self.recvall(self.connection) # Split the response into a header and body
-        print(self.httpResponse)
+        self.httpResponse = self.recvall(self.connection)
+        print(self.httpResponse) # Send the response to std output
         code = int(self.get_code(self.httpResponse)) # Need to cast the code from str back to int
-        body = self.get_body(self.httpResponse)
+        body = self.get_body(self.httpResponse) # Get the body
         self.clearMem() # Need to clean up the object's attributes
         return HTTPResponse(code, body)
 
@@ -156,10 +156,10 @@ class HTTPClient(object):
             print("Error occurred while trying to connect")
         
         self.connection.sendall(httpRequest)
-        self.httpResponse = self.recvall(self.connection) # Split the response into a header and body
-        print(self.httpResponse)
+        self.httpResponse = self.recvall(self.connection)
+        print(self.httpResponse) # Send the response to std out
         code = int(self.get_code(self.httpResponse)) # Need to cast the code from str back to int
-        body = self.get_body(self.httpResponse)
+        body = self.get_body(self.httpResponse) # Get the body
         self.clearMem() # Need to clean up the object's attributes
         return HTTPResponse(code, body)
 
@@ -174,6 +174,7 @@ class HTTPClient(object):
         self.port = 80
         self.path = ""
         self.requestType = ""
+        self.connection.close()
         self.connection = None
         self.httpResponse = ""        
     
