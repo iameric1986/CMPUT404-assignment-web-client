@@ -120,18 +120,11 @@ class HTTPClient(object):
             args = urllib.urlencode(args)
             httpRequest += args + "\r\n\r\n"
             
-        try:
-            self.connect(self.host, self.port)
-        except:
-            print("Error occurred while trying to connect")
-        
-        self.connection.sendall(httpRequest)
-        self.httpResponse = self.recvall(self.connection)
-        print(self.httpResponse) # Send the response to std output
-        code = int(self.get_code(self.httpResponse)) # Need to cast the code from str back to int
-        body = self.get_body(self.httpResponse) # Get the body
-        self.clearMem() # Need to clean up the object's attributes
-        return HTTPResponse(code, body)
+        self.requestHTTPpage(request)
+        print(self.httpResponse) # Send the response to std out
+        response = self.parseHTTPresponse()
+        self.clearMem()
+        return response
 
     # Same logic as GET but changed the request to POST and added the content-type
     def POST(self, url, args=None):        
@@ -145,19 +138,31 @@ class HTTPClient(object):
         else:
             httpRequest += "Content-Length: 0\r\n\r\n\r\n\r\n"
         
+        self.requestHTTPpage(request)
+        print(self.httpResponse) # Send the response to std out
+        
+        response = self.parseHTTPresponse()
+        self.clearMem()
+        return response
+    
+    def requestHTTPpage(self, request):
         try:
             self.connect(self.host, self.port)
         except:
             print("Error occurred while trying to connect")
-        
-        self.connection.sendall(httpRequest)
-        self.httpResponse = self.recvall(self.connection)
-        print(self.httpResponse) # Send the response to std out
+             
+        try:    
+            self.connection.sendall(httpRequest)
+            self.httpResponse = self.recvall(self.connection)
+        except:
+            print("Error occurred while requesting web page")
+        return None
+    
+    def parseHTTPresponse(self):
         code = int(self.get_code(self.httpResponse)) # Need to cast the code from str back to int
         body = self.get_body(self.httpResponse) # Get the body
-        self.clearMem() # Need to clean up the object's attributes
         return HTTPResponse(code, body)
-
+    
     def command(self, url, command="GET", args=None):
         if (command == "POST"):
             return self.POST( url, args )
