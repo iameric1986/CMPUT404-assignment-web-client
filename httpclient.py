@@ -120,7 +120,7 @@ class HTTPClient(object):
             args = urllib.urlencode(args)
             httpRequest += args + "\r\n\r\n"
             
-        self.requestHTTPpage(request)
+        self.requestHTTPpage(httpRequest)
         print(self.httpResponse) # Send the response to std out
         response = self.parseHTTPresponse()
         self.clearMem()
@@ -138,7 +138,7 @@ class HTTPClient(object):
         else:
             httpRequest += "Content-Length: 0\r\n\r\n\r\n\r\n"
         
-        self.requestHTTPpage(request)
+        self.requestHTTPpage(httpRequest)
         print(self.httpResponse) # Send the response to std out
         
         response = self.parseHTTPresponse()
@@ -152,7 +152,7 @@ class HTTPClient(object):
             print("Error occurred while trying to connect")
              
         try:    
-            self.connection.sendall(httpRequest)
+            self.connection.sendall(request)
             self.httpResponse = self.recvall(self.connection)
         except:
             print("Error occurred while requesting web page")
